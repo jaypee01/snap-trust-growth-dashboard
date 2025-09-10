@@ -1,4 +1,11 @@
-fastapi
-uvicorn
-pandas
-pydantic
+# Core dependencies
+openai>=1.0.0
+pandas>=2.0.0
+
+# Optional but useful for dashboards/APIs
+flask>=3.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.30.0
+
+# For environment variable management
+python-dotenv>=1.0.0

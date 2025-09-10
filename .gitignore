@@ -55,3 +55,6 @@ htmlcov/
 app/data/*.csv
 !app/data/merchants_loyalty.csv
 !app/data/payments.csv
+
+# Node modules
+node_modules/

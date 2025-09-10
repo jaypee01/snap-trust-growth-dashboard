@@ -22,6 +22,8 @@ class Merchant(BaseModel):
         Calculated trust score (0 to 100).
     LoyaltyTier : str
         Loyalty tier assigned based on TrustScore (Gold, Silver, Bronze).
+    Summary : str
+        AI-generated natural language summary of the merchant's trust and loyalty profile.
     """
     MerchantID: str = Field(..., description="Unique identifier of the merchant")
     MerchantName: str = Field(..., description="Name of the merchant")
@@ -31,6 +33,7 @@ class Merchant(BaseModel):
     TransactionVolume: int = Field(..., description="Total transaction volume (whole number)")
     TrustScore: float = Field(..., description="Calculated trust score (0 to 100)")
     LoyaltyTier: str = Field(..., description="Loyalty tier based on TrustScore (Gold, Silver, Bronze)")
+    Summary: str = Field(..., description="AI-generated summary of merchant profile")
 
 
 class Customer(BaseModel):
@@ -55,6 +58,8 @@ class Customer(BaseModel):
         Calculated trust score (0 to 100).
     LoyaltyTier : str
         Loyalty tier assigned based on TrustScore (Gold, Silver, Bronze).
+    Summary : str
+        AI-generated natural language summary of the customer's trust and loyalty profile.
     """
     CustomerID: str = Field(..., description="Unique identifier of the customer")
     CustomerName: str = Field(..., description="Name of the customer")
@@ -64,3 +69,4 @@ class Customer(BaseModel):
     TransactionVolume: int = Field(..., description="Total amount paid by the customer (whole number)")
     TrustScore: float = Field(..., description="Calculated trust score (0 to 100)")
     LoyaltyTier: str = Field(..., description="Loyalty tier based on TrustScore (Gold, Silver, Bronze)")
+    Summary: str = Field(..., description="AI-generated summary of customer profile")

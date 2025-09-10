@@ -27,7 +27,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Add Data Files
+### 4. **Set up environment variables:**
+
+Create a .env file in the backend root (next to main.py) with content like:
+
+OPENAI_API_KEY=your_api_key_here
+
+### 5. Add Data Files
 
 Place your CSV files in `app/data/`:
 
@@ -36,7 +42,7 @@ Place your CSV files in `app/data/`:
 
 Sample CSVs are already provided in the `app/data/` folder.
 
-### 5. Run the Server
+### 6. Run the Server
 
 ```bash
 uvicorn app.main:app --reload
@@ -68,6 +74,7 @@ snap-trust-growth-dashboard/
 ├── frontend/
 │   ├── src/
 │   └── package.json
+├── .env
 ├── .gitignore
 └── README.md
 ```

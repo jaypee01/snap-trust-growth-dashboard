@@ -33,6 +33,7 @@ snap-trust-growth-dashboard/
 ├── frontend/
 │   ├── src/
 │   └── package.json
+├── .env
 ├── .gitignore
 └── README.md
 ```
@@ -63,7 +64,13 @@ venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
 
-4. **Run the server:**
+4. **Set up environment variables:**
+
+Create a .env file in the backend root (next to main.py) with content like:
+
+OPENAI_API_KEY=your_api_key_here
+
+5. **Run the server:**
 
 ```bash
 uvicorn app.main:app --reload

@@ -6,6 +6,16 @@ from ..utils import (
     calculate_merchant_trust_score,
     assign_loyalty_tier,
 )
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
+
+# Load variables from .env file
+load_dotenv()
+
+# Initialize client with key from .env
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 router = APIRouter()
 
@@ -163,7 +173,11 @@ def get_customer_details(customer_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Customer not found")
 
     customer_data = customer_row.iloc[0].to_dict()
-    return {field: customer_data[field] for field in CUSTOMER_FULL_FIELDS_ORDER}
+    result = {field: customer_data[field] for field in CUSTOMER_FULL_FIELDS_ORDER}
+
+    # Add AI-generated summary
+    result["Summary"] = generate_summary("customer", result)
+    return result
 
 
 # ------------------------------
@@ -227,4 +241,48 @@ def get_merchant_details(merchant_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Merchant not found")
 
     merchant_data = merchant_row.iloc[0].to_dict()
-    return {field: merchant_data[field] for field in MERCHANT_OUTPUT_FIELDS_ORDER}
+    result = {field: merchant_data[field] for field in MERCHANT_OUTPUT_FIELDS_ORDER}
+
+    # Add AI-generated summary
+    result["Summary"] = generate_summary("merchant", result)
+    return result
+
+
+def generate_summary(entity_type: str, data: dict) -> str:
+    """
+    Generate a natural language summary for customer or merchant metrics.
+    Uses OpenAI if API key is available, otherwise falls back to a simple rule-based summary.
+    """
+    # Fall back summary if no key is configured
+    if not client.api_key:
+        return default_summary(entity_type, data)
+
+    prompt = f"""
+    Summarize the following {entity_type} details in 2-3 sentences for business reporting:
+
+    {data}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # fast + cost-effective
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that creates concise business summaries."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.5
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        # Generic fallback if API call fails
+        return default_summary(entity_type, data)
+
+def default_summary(entity_type: str, data: dict) -> str:
+    """
+    Simple rule-based summary when AI is not available.
+    """
+    name = data.get("MerchantName") or data.get("CustomerName") or "Entity"
+    score = data.get("TrustScore", "N/A")
+    tier = data.get("LoyaltyTier", "N/A")
+    return f"{name} has a TrustScore of {score} and is placed in the {tier} tier."        
