@@ -71,10 +71,58 @@ backend/
 
 ## 🛠️ API Endpoints
 
-* `GET /merchants` — List all merchants with trust scores and loyalty tiers
-* `GET /customers` — List all customers with trust scores and loyalty tiers
-* `GET /leaderboard/merchants?order=asc|desc&limit=10` — Merchants sorted by trust score
-* `GET /leaderboard/customers?order=asc|desc&limit=10` — Customers sorted by trust score
+### Merchants
+
+* `GET /merchants` — List all merchants (summary only) with fields:
+
+  * `MerchantID` — Unique merchant identifier
+  * `MerchantName` — Name of the merchant
+  * `ExclusivityFlag` — 1 if exclusive partner, 0 otherwise
+  * `TrustScore` — Calculated composite trust score
+  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+
+* `GET /merchants/{merchant_id}` — Get full metrics for a specific merchant by ID, including:
+
+  * `MerchantID`
+  * `MerchantName`
+  * `RepaymentRate`
+  * `DisputeRate`
+  * `DefaultRate`
+  * `TransactionVolume`
+  * `TenureMonths`
+  * `EngagementScore`
+  * `ComplianceScore`
+  * `ResponsivenessScore`
+  * `ExclusivityFlag`
+  * `TrustScore`
+  * `LoyaltyTier`
+
+### Customers
+
+* `GET /customers` — List all customers (summary only) with fields:
+
+  * `CustomerID` — Unique customer identifier
+  * `CustomerName` — Name of the customer
+  * `TrustScore` — Calculated composite trust score
+  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+
+* `GET /customers/{customer_id}` — Get full metrics for a specific customer by ID, including:
+
+  * `CustomerID`
+  * `CustomerName`
+  * `RepaymentRate`
+  * `DisputeCount`
+  * `DefaultRate`
+  * `TransactionVolume`
+  * `TrustScore`
+  * `LoyaltyTier`
+
+### Leaderboard (sorted by TrustScore)
+
+* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10` — Returns top merchants sorted by `TrustScore` (summary fields only).
+* `GET /leaderboard/customers?sort_order=asc|desc&limit=10` — Returns top customers sorted by `TrustScore` (summary fields only).
+
+---
 
 👉 Full interactive API docs available at `/docs`.
 
