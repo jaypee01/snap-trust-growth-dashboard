@@ -76,10 +76,8 @@ snap-trust-growth-dashboard/
 
 ## 🛠️ API Endpoints
 
-- `GET /merchants` — List all merchants with trust scores and loyalty tiers
-- `GET /customers` — List all customers with trust scores and loyalty tiers
-- `GET /leaderboard/merchants?order=asc|desc&limit=10` — Merchants sorted by trust score
-- `GET /leaderboard/customers?order=asc|desc&limit=10` — Customers sorted by trust score
+- `GET /leaderboard/merchants?sort_order=asc|desc&limit=10` — Merchants sorted by trust score
+- `GET /leaderboard/customers?sort_order=asc|desc&limit=10` — Customers sorted by trust score
 
 👉 Full interactive API docs available at `/docs`.
 
