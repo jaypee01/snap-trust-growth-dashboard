@@ -31,8 +31,8 @@ pip install -r requirements.txt
 
 Place your CSV files in `app/data/`:
 
-* `merchants_loyality.csv`
-* `payments.csv`
+- `merchants_loyality.csv`
+- `payments.csv`
 
 Sample CSVs are already provided in the `app/data/` folder.
 
@@ -42,28 +42,33 @@ Sample CSVs are already provided in the `app/data/` folder.
 uvicorn app.main:app --reload
 ```
 
-* API base: `http://127.0.0.1:8000`
-* Interactive docs: `http://127.0.0.1:8000/docs`
+- API base: `http://127.0.0.1:8000`
+- Interactive docs: `http://127.0.0.1:8000/docs`
 
 ---
 
 ## 📁 Project Structure
 
 ```
-backend/
-├── app/
-│   ├── main.py            # FastAPI entrypoint
-│   ├── models.py          # Pydantic models for API/data
-│   ├── crud.py            # CSV reading, trust score logic
-│   ├── endpoints/
-│   │   ├── merchants.py   # /merchants API
-│   │   ├── customers.py   # /customers API
-│   │   └── leaderboard.py # /leaderboard API
-│   ├── data/
-│   │   ├── merchants.csv  # Sample merchant data
-│   │   └── customers.csv  # Sample customer data
-│   └── utils.py           # Helper functions (scoring, tiering)
-├── requirements.txt
+snap-trust-growth-dashboard/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── utils.py
+│   │   ├── endpoints/
+│   │   │   └── leaderboard.py
+│   │   ├── data/
+│   │   │   ├── merchants_loyalty.csv
+│   │   │   └── payments.csv
+│   │   └── dataGenerator/
+│   │       ├── merchant_loyalty_data_generator.py
+│   │       └── payments_data_generator.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   └── package.json
+├── .gitignore
 └── README.md
 ```
 
@@ -71,10 +76,10 @@ backend/
 
 ## 🛠️ API Endpoints
 
-* `GET /merchants` — List all merchants with trust scores and loyalty tiers
-* `GET /customers` — List all customers with trust scores and loyalty tiers
-* `GET /leaderboard/merchants?order=asc|desc&limit=10` — Merchants sorted by trust score
-* `GET /leaderboard/customers?order=asc|desc&limit=10` — Customers sorted by trust score
+- `GET /merchants` — List all merchants with trust scores and loyalty tiers
+- `GET /customers` — List all customers with trust scores and loyalty tiers
+- `GET /leaderboard/merchants?order=asc|desc&limit=10` — Merchants sorted by trust score
+- `GET /leaderboard/customers?order=asc|desc&limit=10` — Customers sorted by trust score
 
 👉 Full interactive API docs available at `/docs`.
 
@@ -82,9 +87,9 @@ backend/
 
 ## ⚙️ How It Works
 
-* Reads merchant and customer data from CSV files
-* Calculates trust scores and loyalty tiers (if not present in CSV)
-* Provides REST APIs for use in frontend dashboards
+- Reads merchant and customer data from CSV files
+- Calculates trust scores and loyalty tiers (if not present in CSV)
+- Provides REST APIs for use in frontend dashboards
 
 ---
 
@@ -96,6 +101,6 @@ Pair this backend with the React + Vite frontend in the `frontend/` directory fo
 
 ## 📝 Notes
 
-* For hackathon/demo purposes, all data is mock/synthetic.
-* You can expand the CSVs or scoring logic as needed.
-* Add CORS middleware if connecting to a frontend on a different port.
+- For hackathon/demo purposes, all data is mock/synthetic.
+- You can expand the CSVs or scoring logic as needed.
+- Add CORS middleware if connecting to a frontend on a different port.
