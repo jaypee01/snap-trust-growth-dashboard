@@ -47,16 +47,19 @@ def prepare_merchant_metrics(df: pd.DataFrame) -> pd.DataFrame:
 # Merchant Endpoints
 # ------------------------------
 @router.get("/", summary="Get Merchants with Trust & Loyalty Info")
-def get_merchants(limit: int = Query(10), sort_order: str = Query("desc")) -> List[dict]:
+def get_merchants(
+    limit: int = Query(10),
+    sort_order: str = Query("desc")
+) -> List[dict]:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)
     ascending = sort_order == "asc"
     df = df.sort_values("TrustScore", ascending=ascending).head(limit)
 
-    results = df[MERCHANT_SUMMARY_FIELDS[:-1]].to_dict(orient="records")
-    for r in results:
-        r["Summary"] = generate_summary("merchant", r)
+    # No Summary in list API
+    results = df[["MerchantID", "MerchantName", "ExclusivityFlag", "TrustScore", "LoyaltyTier"]].to_dict(orient="records")
     return results
+
 
 @router.get("/{merchant_id}", summary="Get Merchant Full Metrics")
 def get_merchant_details(merchant_id: str) -> dict:
@@ -66,8 +69,11 @@ def get_merchant_details(merchant_id: str) -> dict:
     if row.empty:
         raise HTTPException(404, "Merchant not found")
     data = row.iloc[0].to_dict()
-    return {field: data[field] for field in MERCHANT_OUTPUT_FIELDS_ORDER}
 
+    result = {field: data[field] for field in MERCHANT_OUTPUT_FIELDS_ORDER}
+    result["Summary"] = generate_summary("merchant", data)  # <-- add summary only here
+    return result
+    
 @router.get("/{merchant_id}/summary/explain", summary="Explain Merchant Scores/Tiers")
 def explain_merchant_summary(merchant_id: str) -> dict:
     df = pd.read_csv("app/data/merchants_loyalty.csv")

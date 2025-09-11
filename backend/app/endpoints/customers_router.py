@@ -56,9 +56,8 @@ def get_customers(limit: int = Query(10), sort_order: str = Query("desc", regex=
     ascending = sort_order == "asc"
     customers = customers.sort_values(by="TrustScore", ascending=ascending).head(limit)
 
-    results = customers[CUSTOMER_SUMMARY_FIELDS[:-1]].to_dict(orient="records")
-    for r in results:
-        r["Summary"] = generate_summary("customer", r)
+    # Just return summary fields (without Summary)
+    results = customers[["CustomerID", "CustomerName", "TrustScore", "LoyaltyTier"]].to_dict(orient="records")
     return results
 
 @router.get("/{customer_id}", summary="Get Customer Full Metrics")
@@ -71,7 +70,10 @@ def get_customer_details(customer_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Customer not found")
 
     customer_data = row.iloc[0].to_dict()
-    return {field: customer_data[field] for field in CUSTOMER_FULL_FIELDS_ORDER}
+
+    result = {field: customer_data[field] for field in CUSTOMER_FULL_FIELDS_ORDER}
+    result["Summary"] = generate_summary("customer", customer_data)  # <-- add summary here
+    return result
 
 @router.get("/{customer_id}/summary/explain", summary="Explain Customer TrustScore & LoyaltyTier")
 def explain_customer_summary(customer_id: str) -> dict:

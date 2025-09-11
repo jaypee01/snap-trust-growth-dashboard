@@ -116,7 +116,7 @@ npm run dev
 
 * `GET /merchants` — List all merchants (summary only):
 
-  * `MerchantID`, `MerchantName`, `ExclusivityFlag`, `TrustScore`, `LoyaltyTier`, `Summary`
+  * `MerchantID`, `MerchantName`, `ExclusivityFlag`, `TrustScore`, `LoyaltyTier`
 
 * `GET /merchants/{merchant_id}` — Full metrics:
 
@@ -137,7 +137,7 @@ npm run dev
 
 * `GET /customers` — List all customers (summary only):
 
-  * `CustomerID`, `CustomerName`, `TrustScore`, `LoyaltyTier`, `Summary`
+  * `CustomerID`, `CustomerName`, `TrustScore`, `LoyaltyTier`
 
 * `GET /customers/{customer_id}` — Full metrics:
 
