@@ -1,7 +1,7 @@
 import os
 import math
 import json
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 from dotenv import load_dotenv
 from openai import OpenAI
 import logging
@@ -21,26 +21,34 @@ def call_ai(
     task: str,
     entity_type: str,
     data: Dict,
-    default_response: Union[str, List[Dict]]
-) -> Union[str, List[Dict]]:
+    default_response: Union[str, List[Dict], Dict] = None,
+    system: str = "You are a helpful financial assistant."
+) -> Any:
     """
-    Unified AI call wrapper for summaries and recommendations with logging.
-    Ensures AI outputs valid JSON without markdown/code fences.
+    Unified AI wrapper for summaries, recommendations, classification, and analysis.
+    Ensures AI outputs readable data (JSON, HTML, or plain text) depending on the task.
     """
+
     logger.info(f"call_ai invoked with task='{task}', entity_type='{entity_type}'")
-    logger.info(f"Input data: {json.dumps(data, indent=2)}")
+    try:
+        logger.info(f"Input data: {json.dumps(data, indent=2)}")
+    except Exception:
+        logger.warning("Non-serializable data detected, skipping JSON logging.")
 
     if not client.api_key:
         logger.warning("OpenAI API key not set. Returning default response.")
         return default_response
 
+    # -----------------------------
+    # Build prompt based on task
+    # -----------------------------
     if task == "summary":
         prompt = f"""
 Summarize the following {entity_type} details in 2-3 sentences for business reporting.
 
 ⚠️ IMPORTANT:
-- Return only plain text (or a single JSON object if needed)
-- Do NOT include markdown code fences or extra explanation
+- Return plain text or a single JSON object if needed.
+- Do NOT include markdown code fences or extra explanation.
 
 Profile:
 {data}
@@ -52,19 +60,35 @@ loyalty, engagement, or financial performance.
 
 ⚠️ IMPORTANT:
 - Return ONLY valid JSON (array of objects)
-- Do NOT include markdown code fences (```), explanations, or extra text
-- Each object must have exactly "title" and "description" fields
-
-Format example:
-[
-    {{
-        "title": "Short title",
-        "description": "Detailed explanation of the recommendation"
-    }}
-]
+- Do NOT include markdown or explanations
+- Each object must have "title" and "description"
 
 Profile:
 {data}
+"""
+    elif task == "classification":
+        prompt = f"""
+{system}
+
+Query:
+{data.get("query", "")}
+
+⚠️ IMPORTANT:
+- Respond with ONLY one word: 'customers' or 'merchants'
+"""
+    elif task == "analysis":
+        prompt = f"""
+{system}
+
+Query:
+{data.get("query", "")}
+
+Data (sample or capped records):
+{data.get("records", [])}
+
+⚠️ IMPORTANT:
+- Respond with STRICT VALID JSON only.
+- Do NOT include markdown, explanations, or extra text.
 """
     else:
         logger.warning(f"Unknown task '{task}'. Returning default response.")
@@ -72,41 +96,47 @@ Profile:
 
     logger.info(f"Prompt sent to AI:\n{prompt}")
 
+    # -----------------------------
+    # Send to AI
+    # -----------------------------
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful financial assistant."},
+                {"role": "system", "content": system},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=300,
+            max_tokens=1000,
             temperature=0.5,
         )
         content = response.choices[0].message.content.strip()
         logger.info(f"Raw AI response: {content}")
 
-        if task == "recommendations":
-            # Strip any lingering markdown/code fences
+        # -----------------------------
+        # Parse response based on task
+        # -----------------------------
+        if task in ("recommendations", "analysis"):
+            # Strip markdown/code fences
             content = content.strip("` \n")
+            # Attempt to fix common JSON issues
             try:
                 parsed = json.loads(content)
-                clean_recs = [
-                    {
-                        "title": rec.get("title", "").strip(),
-                        "description": rec.get("description", "").strip()
-                    }
-                    for rec in parsed if isinstance(rec, dict)
-                ]
-                if not clean_recs:
-                    logger.warning("Parsed AI response empty. Returning default response.")
+                return parsed if parsed else default_response
+            except json.JSONDecodeError:
+                # Try a simple fix: remove trailing commas
+                import re
+                repaired = re.sub(r",\s*([\]}])", r"\1", content)
+                try:
+                    parsed = json.loads(repaired)
+                    return parsed if parsed else default_response
+                except Exception:
+                    logger.error("Failed to parse AI JSON. Returning default response.")
                     return default_response
-                logger.info(f"Returning {len(clean_recs)} AI-generated recommendations.")
-                return clean_recs
-            except Exception as e:
-                logger.error(f"Error parsing AI response: {e}. Returning default response.")
-                return default_response
-        else:
-            logger.info("Returning AI-generated summary.")
+
+        elif task == "classification":
+            return content.lower().strip()
+
+        else:  # summary or free text (could be HTML)
             return content
 
     except Exception as e:

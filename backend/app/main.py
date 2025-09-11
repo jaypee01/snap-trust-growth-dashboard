@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .endpoints import customers_router, merchants_router  # import your routers
+from .endpoints import customers_router, merchants_router, ai_query_router   # import your routers
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -38,3 +38,6 @@ app.include_router(customers_router.router, prefix="/customers", tags=["Customer
 
 # Include merchants router
 app.include_router(merchants_router.router, prefix="/merchants", tags=["Merchants"])
+
+# Include AI query router
+app.include_router(ai_query_router.router, prefix="/ai-query", tags=["AI Query"])

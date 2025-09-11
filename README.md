@@ -1,13 +1,13 @@
 # Snap Trust & Growth Dashboard
 
-**Hackathon 2025 Project** – A dashboard to track **merchant and customer trust scores, loyalty tiers, historical trends, and leaderboards**. Built with **FastAPI (backend)** and **React + Vite (frontend)** using synthetic CSV data.
+**Hackathon 2025 Project** – A dashboard to track **merchant and customer trust scores, loyalty tiers, historical trends, and AI-generated insights**. Built with **FastAPI (backend)** and **React + Vite (frontend)** using synthetic CSV data.
 
 ---
 
 ## 🚀 Quick Overview
 
-* **Backend:** FastAPI REST APIs serving trust scores, loyalty tiers, historical trends, benchmarks, AI-generated summaries, and recommendations.
-* **Frontend:** React + Vite dashboard to visualize metrics and leaderboards.
+* **Backend:** FastAPI REST APIs serving trust scores, loyalty tiers, historical trends, benchmarks, AI-generated summaries, recommendations, and natural language queries.
+* **Frontend:** React + Vite dashboard to visualize metrics.
 * **Data Generator:** Python scripts to generate synthetic data for `merchants_loyalty.csv` and `payments.csv`.
 
 ---
@@ -15,6 +15,7 @@
 ## 📁 Repository Structure
 
 ```
+
 snap-trust-growth-dashboard/
 ├── backend/
 │   ├── app/
@@ -24,7 +25,7 @@ snap-trust-growth-dashboard/
 │   │   ├── endpoints/
 │   │   │   ├── merchants.py
 │   │   │   ├── customers.py
-│   │   │   └── leaderboard.py
+│   │   │   └── ai_query_router.py
 │   │   ├── data/
 │   │   │   ├── merchants_loyalty.csv
 │   │   │   └── payments.csv
@@ -38,7 +39,8 @@ snap-trust-growth-dashboard/
 ├── .env
 ├── .gitignore
 └── README.md
-```
+
+````
 
 ---
 
@@ -51,7 +53,7 @@ snap-trust-growth-dashboard/
 ```bash
 git clone https://github.com/jaypee01/snap-trust-growth-dashboard.git
 cd backend
-```
+````
 
 2. **Create virtual environment & activate:**
 
@@ -114,57 +116,49 @@ npm run dev
 
 ### Merchants
 
-* `GET /merchants` — List all merchants (summary only):
-
-  * `MerchantID`, `MerchantName`, `ExclusivityFlag`, `TrustScore`, `LoyaltyTier`
-
-* `GET /merchants/{merchant_id}` — Full metrics:
-
-  * Core metrics: `RepaymentRate`, `DisputeRate`, `DefaultRate`, `TransactionVolume`, `TenureMonths`
-  * Engagement metrics: `EngagementScore`, `ComplianceScore`, `ResponsivenessScore`, `ExclusivityFlag`
-  * Derived metrics: `TrustScore`, `LoyaltyTier`
-  * Optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`, `Benchmark`
-
-* `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
-
-* `GET /merchants/{merchant_id}/history` — Historical trends of TrustScore, EngagementScore, ComplianceScore.
-
-* `GET /merchants/{merchant_id}/benchmark` — Compare merchant metrics against peers.
-
-* `GET /merchants/{merchant_id}/recommendations` — AI-generated actionable recommendations.
+* `GET /merchants` — List all merchants (summary only)
+* `GET /merchants/{merchant_id}` — Full metrics with optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`, `Benchmark`
+* `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier
+* `GET /merchants/{merchant_id}/history` — Historical trends
+* `GET /merchants/{merchant_id}/benchmark` — Compare metrics against peers
+* `GET /merchants/{merchant_id}/recommendations` — AI-generated actionable recommendations
 
 ### Customers
 
-* `GET /customers` — List all customers (summary only):
+* `GET /customers` — List all customers (summary only)
+* `GET /customers/{customer_id}` — Full metrics with optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`
+* `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier
+* `GET /customers/{customer_id}/history` — Historical trends
+* `GET /customers/{customer_id}/recommendations` — AI-generated actionable recommendations
 
-  * `CustomerID`, `CustomerName`, `TrustScore`, `LoyaltyTier`
+### AI Query (Natural Language)
 
-* `GET /customers/{customer_id}` — Full metrics:
+* `POST /ai-query/` — Single endpoint for **any natural language query** about merchants or customers.
 
-  * Core metrics: `RepaymentRate`, `DisputeCount`, `DefaultRate`, `TransactionVolume`
-  * Derived metrics: `TrustScore`, `LoyaltyTier`
-  * Optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`
+**Request Body Example:**
 
-* `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
+```json
+{
+  "query": "Show top 10 customers by TrustScore and their loyalty tiers"
+}
+```
 
-* `GET /customers/{customer_id}/history` — Historical trends of TrustScore, disputes, defaults.
+**Features:**
 
-* `GET /customers/{customer_id}/recommendations` — AI-generated actionable recommendations.
-
-### Leaderboard (sorted by TrustScore)
-
-* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10`
-* `GET /leaderboard/customers?sort_order=asc|desc&limit=10`
+* Automatically detects if query is about **customers** or **merchants**
+* Prepares metrics using `prepare_customer_metrics` or `prepare_merchant_metrics`
+* Generates **analysis, summaries, recommendations**, or **filtered/sorted data**
+* Returns **readable JSON, HTML, or text** depending on the request
 
 ---
 
 ## 🎯 Features
 
-* Trust score & loyalty tier calculation for merchants & customers
+* Trust score & loyalty tier calculation
 * Historical trend tracking
 * AI-powered summaries and recommendations
 * Benchmarks against peers
-* Leaderboards with sorting & filtering
+* Natural language query API (`/ai-query`) for flexible analytics
 * Synthetic data generation via `dataGenerator/` scripts
 
 ---
@@ -180,9 +174,9 @@ npm run dev
 
 ## ⚠️ Notes
 
-* All data is synthetic for demo purposes.
-* Add CORS middleware if connecting frontend on a different port.
-* CSV files can be regenerated using the scripts in `dataGenerator/`.
-* AI summaries/recommendations require `OPENAI_API_KEY` in `.env`.
+* All data is synthetic for demo purposes
+* AI summaries/recommendations require `OPENAI_API_KEY` in `.env`
+* CSV files can be regenerated using the scripts in `dataGenerator/`
+* Add CORS middleware if connecting frontend on a different port
 
----
+```
