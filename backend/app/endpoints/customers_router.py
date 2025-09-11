@@ -2,8 +2,7 @@ import pandas as pd
 from fastapi import APIRouter, Query, HTTPException
 from typing import List
 from ..utils import (
-    calculate_customer_trust_score,
-    assign_loyalty_tier,
+    get_customer_trust_loyalty,   # formula-based
     generate_summary,
     generate_customer_recommendations
 )
@@ -39,11 +38,20 @@ def prepare_customer_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     customers["TransactionVolume"] = customers["TransactionVolume"].round(0).astype(int)
     customers[["RepaymentRate", "DefaultRate"]] = customers[["RepaymentRate", "DefaultRate"]].round(2)
-    customers["TrustScore"] = customers.apply(
-        lambda row: calculate_customer_trust_score(row["RepaymentRate"], row["DisputeCount"], row["DefaultRate"]),
+
+    # ------------------------------
+    # Formula-based TrustScore & LoyaltyTier
+    # ------------------------------
+    trust_loyalty_results = customers.apply(
+        lambda row: get_customer_trust_loyalty(
+            row["RepaymentRate"], row["DisputeCount"], row["DefaultRate"]
+        ),
         axis=1
     )
-    customers["LoyaltyTier"] = customers["TrustScore"].apply(assign_loyalty_tier)
+
+    customers["TrustScore"] = trust_loyalty_results.apply(lambda x: x["TrustScore"])
+    customers["LoyaltyTier"] = trust_loyalty_results.apply(lambda x: x["LoyaltyTier"])
+
     return customers
 
 # ------------------------------
@@ -56,11 +64,10 @@ def get_customers(limit: int = Query(10), sort_order: str = Query("desc", regex=
     ascending = sort_order == "asc"
     customers = customers.sort_values(by="TrustScore", ascending=ascending).head(limit)
 
-    # Just return summary fields (without Summary)
     results = customers[["CustomerID", "CustomerName", "TrustScore", "LoyaltyTier"]].to_dict(orient="records")
     return results
 
-@router.get("/{customer_id}", summary="Get Customer Full Metrics")
+@router.get("/{customer_id}", summary="Get Customer Full Metrics with Recommendations")
 def get_customer_details(customer_id: str) -> dict:
     df = pd.read_csv("app/data/payments.csv")
     customers = prepare_customer_metrics(df)
@@ -70,9 +77,9 @@ def get_customer_details(customer_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Customer not found")
 
     customer_data = row.iloc[0].to_dict()
-
     result = {field: customer_data[field] for field in CUSTOMER_FULL_FIELDS_ORDER}
-    result["Summary"] = generate_summary("customer", customer_data)  # <-- add summary here
+    result["Summary"] = generate_summary("customer", customer_data)
+    result["Recommendations"] = generate_customer_recommendations(customer_data)
     return result
 
 @router.get("/{customer_id}/summary/explain", summary="Explain Customer TrustScore & LoyaltyTier")
@@ -85,7 +92,6 @@ def explain_customer_summary(customer_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Customer not found")
 
     data = row.iloc[0].to_dict()
-    # Use utils summary for AI fallback
     explanation = generate_summary("customer", data)
     return {"CustomerID": data["CustomerID"], "Explanation": explanation}
 
@@ -104,11 +110,15 @@ def customer_history(customer_id: str) -> dict:
         TransactionVolume=("PaymentAmount", "sum")
     ).reset_index()
 
-    history["TrustScore"] = history.apply(
-        lambda row: calculate_customer_trust_score(row["RepaymentRate"], row["DisputeCount"], row["DefaultRate"]),
+    # Formula-based TrustScore & LoyaltyTier
+    trust_loyalty_results = history.apply(
+        lambda row: get_customer_trust_loyalty(
+            row["RepaymentRate"], row["DisputeCount"], row["DefaultRate"]
+        ),
         axis=1
     )
-    history["LoyaltyTier"] = history["TrustScore"].apply(assign_loyalty_tier)
+    history["TrustScore"] = trust_loyalty_results.apply(lambda x: x["TrustScore"])
+    history["LoyaltyTier"] = trust_loyalty_results.apply(lambda x: x["LoyaltyTier"])
 
     return {"CustomerID": customer_id, "History": history.to_dict(orient="records")}
 
