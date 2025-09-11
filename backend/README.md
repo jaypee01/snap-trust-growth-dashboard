@@ -25,13 +25,13 @@ snap-trust-growth-dashboard/
 │   │   ├── endpoints/
 │   │   │   ├── merchants.py
 │   │   │   ├── customers.py
-│   │   │   └── ai_query_router.py
+│   │   │   └── ai\_query\_router.py
 │   │   ├── data/
-│   │   │   ├── merchants_loyalty.csv
+│   │   │   ├── merchants\_loyalty.csv
 │   │   │   └── payments.csv
 │   │   └── dataGenerator/
-│   │       ├── merchant_loyalty_data_generator.py
-│   │       └── payments_data_generator.py
+│   │       ├── merchant\_loyalty\_data\_generator.py
+│   │       └── payments\_data\_generator.py
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
@@ -146,9 +146,16 @@ npm run dev
 **Features:**
 
 * Automatically detects if query is about **customers** or **merchants**
+
 * Prepares metrics using `prepare_customer_metrics` or `prepare_merchant_metrics`
+
 * Generates **analysis, summaries, recommendations**, or **filtered/sorted data**
+
 * Returns **readable JSON, HTML, or text** depending on the request
+
+* `POST /ai-query/customers` — Customer-specific query endpoint
+
+* `POST /ai-query/merchants` — Merchant-specific query endpoint
 
 ---
 

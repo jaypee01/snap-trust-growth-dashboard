@@ -40,4 +40,4 @@ app.include_router(customers_router.router, prefix="/customers", tags=["Customer
 app.include_router(merchants_router.router, prefix="/merchants", tags=["Merchants"])
 
 # Include AI query router
-app.include_router(ai_query_router.router, prefix="/ai-query", tags=["AI Query"])
+app.include_router(ai_query_router.router, prefix="", tags=["AI Query"])
