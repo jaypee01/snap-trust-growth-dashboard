@@ -4,6 +4,11 @@ import json
 from typing import List, Dict, Union
 from dotenv import load_dotenv
 from openai import OpenAI
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -19,35 +24,53 @@ def call_ai(
     default_response: Union[str, List[Dict]]
 ) -> Union[str, List[Dict]]:
     """
-    Unified AI call wrapper for summaries and recommendations only.
+    Unified AI call wrapper for summaries and recommendations with logging.
+    Ensures AI outputs valid JSON without markdown/code fences.
     """
+    logger.info(f"call_ai invoked with task='{task}', entity_type='{entity_type}'")
+    logger.info(f"Input data: {json.dumps(data, indent=2)}")
+
     if not client.api_key:
+        logger.warning("OpenAI API key not set. Returning default response.")
         return default_response
 
     if task == "summary":
         prompt = f"""
-        Summarize the following {entity_type} details in 2-3 sentences for business reporting:
+Summarize the following {entity_type} details in 2-3 sentences for business reporting.
 
-        {data}
-        """
+⚠️ IMPORTANT:
+- Return only plain text (or a single JSON object if needed)
+- Do NOT include markdown code fences or extra explanation
+
+Profile:
+{data}
+"""
     elif task == "recommendations":
         prompt = f"""
-        Provide 3-5 actionable recommendations for this {entity_type} to improve trust,
-        loyalty, engagement, or financial performance.
+Provide 3-5 actionable recommendations for this {entity_type} to improve trust,
+loyalty, engagement, or financial performance.
 
-        Format as JSON array of objects:
-        [
-            {{
-                "title": "Short title",
-                "description": "Detailed explanation of the recommendation"
-            }}
-        ]
+⚠️ IMPORTANT:
+- Return ONLY valid JSON (array of objects)
+- Do NOT include markdown code fences (```), explanations, or extra text
+- Each object must have exactly "title" and "description" fields
 
-        Profile:
-        {data}
-        """
+Format example:
+[
+    {{
+        "title": "Short title",
+        "description": "Detailed explanation of the recommendation"
+    }}
+]
+
+Profile:
+{data}
+"""
     else:
+        logger.warning(f"Unknown task '{task}'. Returning default response.")
         return default_response
+
+    logger.info(f"Prompt sent to AI:\n{prompt}")
 
     try:
         response = client.chat.completions.create(
@@ -60,8 +83,11 @@ def call_ai(
             temperature=0.5,
         )
         content = response.choices[0].message.content.strip()
+        logger.info(f"Raw AI response: {content}")
 
         if task == "recommendations":
+            # Strip any lingering markdown/code fences
+            content = content.strip("` \n")
             try:
                 parsed = json.loads(content)
                 clean_recs = [
@@ -71,14 +97,21 @@ def call_ai(
                     }
                     for rec in parsed if isinstance(rec, dict)
                 ]
-                return clean_recs if clean_recs else default_response
-            except Exception:
+                if not clean_recs:
+                    logger.warning("Parsed AI response empty. Returning default response.")
+                    return default_response
+                logger.info(f"Returning {len(clean_recs)} AI-generated recommendations.")
+                return clean_recs
+            except Exception as e:
+                logger.error(f"Error parsing AI response: {e}. Returning default response.")
                 return default_response
         else:
+            logger.info("Returning AI-generated summary.")
             return content
-    except Exception:
-        return default_response
 
+    except Exception as e:
+        logger.error(f"Exception calling AI: {e}. Returning default response.")
+        return default_response
 
 # ------------------------------
 # Customer Trust & Loyalty (Formula only)
@@ -230,12 +263,36 @@ def generate_customer_recommendations(customer_data: Dict) -> List[Dict]:
         })
         return recs
 
-    return call_ai(
+    logger.info("Calling AI for customer recommendations...")
+    logger.info(f"Customer input data: {json.dumps(customer_data, indent=2)}")
+
+    raw_recommendations = call_ai(
         task="recommendations",
         entity_type="customer",
         data=customer_data,
-        default_response=default_recommendations()
+        default_response=None  # temporarily set None
     )
+
+    logger.info(f"AI raw output: {raw_recommendations}")
+
+    # If AI response is invalid, fall back
+    if not raw_recommendations or not isinstance(raw_recommendations, list):
+        logger.warning("AI response invalid or empty, using default recommendations.")
+        return default_recommendations()
+
+    valid_recs = []
+    for rec in raw_recommendations:
+        if isinstance(rec, dict) and "title" in rec and "description" in rec:
+            valid_recs.append(rec)
+        else:
+            logger.warning(f"Malformed AI recommendation: {rec}")
+
+    if not valid_recs:
+        logger.warning("No valid AI recommendations, using default.")
+        return default_recommendations()
+
+    logger.info(f"Returning {len(valid_recs)} AI-generated recommendations.")
+    return valid_recs
 
 
 # ------------------------------
@@ -259,9 +316,37 @@ def generate_merchant_recommendations(merchant_data: Dict) -> List[Dict]:
         })
         return recs
 
-    return call_ai(
+    logger.info("Calling AI for merchant recommendations...")
+    logger.info(f"Merchant input data: {json.dumps(merchant_data, indent=2)}")
+
+    raw_recommendations = call_ai(
         task="recommendations",
         entity_type="merchant",
         data=merchant_data,
         default_response=default_recommendations()
     )
+
+    logger.info(f"AI raw output: {raw_recommendations}")
+
+    # If AI response is invalid, fall back
+    if not raw_recommendations or not isinstance(raw_recommendations, list):
+        logger.warning("AI response invalid or empty, using default recommendations.")
+        return default_recommendations()
+
+    # Keep only valid recommendations (title + description)
+    valid_recs = []
+    for rec in raw_recommendations:
+        if isinstance(rec, dict) and "title" in rec and "description" in rec:
+            valid_recs.append({
+                "title": rec["title"].strip(),
+                "description": rec["description"].strip()
+            })
+        else:
+            logger.warning(f"Malformed AI recommendation: {rec}")
+
+    if not valid_recs:
+        logger.warning("No valid AI recommendations, using default.")
+        return default_recommendations()
+
+    logger.info(f"Returning {len(valid_recs)} recommendations.")
+    return valid_recs
