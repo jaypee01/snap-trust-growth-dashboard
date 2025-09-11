@@ -1,7 +1,7 @@
 # Snap Trust & Growth Dashboard Backend
 
 This is the backend API for the **Snap Trust & Growth Dashboard** hackathon project.
-It is built with **Python FastAPI** and serves trust scores, loyalty tiers, and leaderboards for merchants and customers using mock CSV data.
+It is built with **Python FastAPI** and serves trust scores, loyalty tiers, AI-generated summaries, historical metrics, benchmarks, and recommendations for **merchants** and **customers** using mock CSV data.
 
 ---
 
@@ -18,7 +18,7 @@ cd backend
 
 ```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # or venv\Scripts\activate on Windows
 ```
 
 ### 3. Install Dependencies
@@ -27,20 +27,22 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. **Set up environment variables:**
+### 4. Set Up Environment Variables
 
-Create a .env file in the backend root (next to main.py) with content like:
+Create a `.env` file in the backend root (next to `main.py`) with:
 
+```
 OPENAI_API_KEY=your_api_key_here
+```
 
 ### 5. Add Data Files
 
-Place your CSV files in `app/data/`:
+Place CSV files in `app/data/`:
 
-- `merchants_loyality.csv`
-- `payments.csv`
+* `merchants_loyalty.csv`
+* `payments.csv`
 
-Sample CSVs are already provided in the `app/data/` folder.
+Sample CSVs are already included in `app/data/`.
 
 ### 6. Run the Server
 
@@ -48,8 +50,8 @@ Sample CSVs are already provided in the `app/data/` folder.
 uvicorn app.main:app --reload
 ```
 
-- API base: `http://127.0.0.1:8000`
-- Interactive docs: `http://127.0.0.1:8000/docs`
+* API base: `http://127.0.0.1:8000`
+* Interactive docs: `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -63,6 +65,8 @@ snap-trust-growth-dashboard/
 │   │   ├── models.py
 │   │   ├── utils.py
 │   │   ├── endpoints/
+│   │   │   ├── merchants.py
+│   │   │   ├── customers.py
 │   │   │   └── leaderboard.py
 │   │   ├── data/
 │   │   │   ├── merchants_loyalty.csv
@@ -85,77 +89,69 @@ snap-trust-growth-dashboard/
 
 ### Merchants
 
-* `GET /merchants` — List all merchants (summary only) with fields:
+* `GET /merchants` — List all merchants (summary only):
 
-  * `MerchantID` — Unique merchant identifier
-  * `MerchantName` — Name of the merchant
-  * `ExclusivityFlag` — 1 if exclusive partner, 0 otherwise
-  * `TrustScore` — Calculated composite trust score
-  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+  * `MerchantID`, `MerchantName`, `ExclusivityFlag`, `TrustScore`, `LoyaltyTier`, `Summary`
 
-* `GET /merchants/{merchant_id}` — Get full metrics for a specific merchant by ID, including:
+* `GET /merchants/{merchant_id}` — Full metrics for a merchant:
 
-  * `MerchantID`
-  * `MerchantName`
-  * `RepaymentRate`
-  * `DisputeRate`
-  * `DefaultRate`
-  * `TransactionVolume`
-  * `TenureMonths`
-  * `EngagementScore`
-  * `ComplianceScore`
-  * `ResponsivenessScore`
-  * `ExclusivityFlag`
-  * `TrustScore`
-  * `LoyaltyTier`
+  * Core metrics: `RepaymentRate`, `DisputeRate`, `DefaultRate`, `TransactionVolume`, `TenureMonths`
+  * Engagement metrics: `EngagementScore`, `ComplianceScore`, `ResponsivenessScore`, `ExclusivityFlag`
+  * Derived metrics: `TrustScore`, `LoyaltyTier`
+  * Optional AI fields: `Benchmark`, `Recommendations`, `Explanation`, `History`
+
+* `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
+
+* `GET /merchants/{merchant_id}/history` — Historical trends of TrustScore, EngagementScore, ComplianceScore.
+
+* `GET /merchants/{merchant_id}/benchmark` — Compare merchant metrics against peers.
+
+* `GET /merchants/{merchant_id}/recommendations` — AI-generated actionable recommendations to improve performance.
 
 ### Customers
 
-* `GET /customers` — List all customers (summary only) with fields:
+* `GET /customers` — List all customers (summary only):
 
-  * `CustomerID` — Unique customer identifier
-  * `CustomerName` — Name of the customer
-  * `TrustScore` — Calculated composite trust score
-  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+  * `CustomerID`, `CustomerName`, `TrustScore`, `LoyaltyTier`, `Summary`
 
-* `GET /customers/{customer_id}` — Get full metrics for a specific customer by ID, including:
+* `GET /customers/{customer_id}` — Full metrics for a customer:
 
-  * `CustomerID`
-  * `CustomerName`
-  * `RepaymentRate`
-  * `DisputeCount`
-  * `DefaultRate`
-  * `TransactionVolume`
-  * `TrustScore`
-  * `LoyaltyTier`
+  * Core metrics: `RepaymentRate`, `DisputeCount`, `DefaultRate`, `TransactionVolume`
+  * Derived metrics: `TrustScore`, `LoyaltyTier`
+  * Optional AI fields: `Recommendations`, `Explanation`, `History`
+
+* `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
+
+* `GET /customers/{customer_id}/history` — Historical trends of TrustScore, disputes, defaults.
+
+* `GET /customers/{customer_id}/recommendations` — AI-generated actionable recommendations.
 
 ### Leaderboard (sorted by TrustScore)
 
-* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10` — Returns top merchants sorted by `TrustScore` (summary fields only).
-* `GET /leaderboard/customers?sort_order=asc|desc&limit=10` — Returns top customers sorted by `TrustScore` (summary fields only).
-
----
-
-👉 Full interactive API docs available at `/docs`.
+* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10` — Top merchants summary.
+* `GET /leaderboard/customers?sort_order=asc|desc&limit=10` — Top customers summary.
 
 ---
 
 ## ⚙️ How It Works
 
-- Reads merchant and customer data from CSV files
-- Calculates trust scores and loyalty tiers (if not present in CSV)
-- Provides REST APIs for use in frontend dashboards
+* Reads merchant and customer data from CSV files.
+* Computes TrustScore and LoyaltyTier dynamically if not present.
+* Uses AI (OpenAI) for summaries and recommendations if `OPENAI_API_KEY` is set.
+* Provides REST APIs for dashboard consumption.
 
 ---
 
 ## 🔗 Frontend
 
-Pair this backend with the React + Vite frontend in the `frontend/` directory for a complete dashboard experience.
+Pair with the React + Vite frontend in the `frontend/` directory for a full dashboard experience.
 
 ---
 
 ## 📝 Notes
 
-- For hackathon/demo purposes, all data is mock/synthetic.
-- You can expand the CSVs or scoring logic as needed.
-- Add CORS middleware if connecting to a frontend on a different port.
+* All data is mock/synthetic for demo purposes.
+* You can expand CSVs, scoring logic, or AI prompts to improve realism.
+* Add CORS middleware if connecting to a frontend running on a different port.
+
+---

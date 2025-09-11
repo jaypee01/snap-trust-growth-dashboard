@@ -1,66 +1,33 @@
-"""
-merchants_loyalty_generator.py
+from utils import calculate_merchant_trust_score, assign_loyalty_tier, assign_risk_score
 
-Generates synthetic merchant loyalty data for testing Snap Trust & Growth Dashboard.
+# Calculate additional fields
+trust_scores = [
+    calculate_merchant_trust_score(
+        r, d, df_val, t, e, c, resp, ex
+    ) for r, d, df_val, t, e, c, resp, ex in zip(
+        repayment_rate, dispute_rate, default_rate, transaction_volume,
+        engagement_score, compliance_score, responsiveness_score, exclusivity_flag
+    )
+]
 
-Features generated per merchant:
-- MerchantID, MerchantName
-- RepaymentRate (0.7–0.98)
-- DisputeRate (0.01–0.15)
-- DefaultRate (0.01–0.22)
-- TransactionVolume (2,000–10,000)
-- TenureMonths (1–36 months)
-- EngagementScore (0.3–1.0)
-- ComplianceScore (0.6–1.0)
-- ResponsivenessScore (0.4–1.0)
-- ExclusivityFlag (0 or 1, ~50/50 split)
+loyalty_tiers = [assign_loyalty_tier(ts) for ts in trust_scores]
+risk_scores = [
+    assign_risk_score(ts, df_val, d) for ts, df_val, d in zip(trust_scores, default_rate, dispute_rate)
+]
 
-Output:
-    app/data/merchants_loyalty.csv
-"""
+# Placeholder summaries, benchmark, recommendations
+summaries = [f"{name} has a TrustScore of {ts} and is {tier}" 
+             for name, ts, tier in zip(merchant_names, trust_scores, loyalty_tiers)]
+benchmarks = ["Top 10% in sector" for _ in range(num_merchants)]
+recommendations = [["Increase engagement", "Reduce disputes"] for _ in range(num_merchants)]
 
-import pandas as pd
-import numpy as np
+# Add to DataFrame
+df["TrustScore"] = trust_scores
+df["LoyaltyTier"] = loyalty_tiers
+df["RiskScore"] = risk_scores
+df["Summary"] = summaries
+df["Benchmark"] = benchmarks
+df["Recommendations"] = recommendations
 
-# Seed ensures reproducibility
-np.random.seed(42)
-
-# Configurable parameters
-num_merchants = 100  # total merchants to generate
-
-# Generate IDs like M001, M002... and names like Merchant A1, Merchant B2
-merchant_ids = [f"M{str(i+1).zfill(3)}" for i in range(num_merchants)]
-merchant_names = [f"Merchant {chr(65 + (i % 26))}{i+1}" for i in range(num_merchants)]
-
-# Generate synthetic metrics
-repayment_rate = np.round(np.random.uniform(0.7, 0.98, num_merchants), 2)
-dispute_rate = np.round(np.random.uniform(0.01, 0.15, num_merchants), 2)
-default_rate = np.round(np.random.uniform(0.01, 0.22, num_merchants), 2)
-transaction_volume = np.random.randint(2000, 10000, num_merchants)
-tenure_months = np.random.randint(1, 36, num_merchants)
-engagement_score = np.round(np.random.uniform(0.3, 1.0, num_merchants), 2)
-compliance_score = np.round(np.random.uniform(0.6, 1.0, num_merchants), 2)
-responsiveness_score = np.round(np.random.uniform(0.4, 1.0, num_merchants), 2)
-exclusivity_flag = np.random.choice([0, 1], num_merchants, p=[0.5, 0.5])
-
-# Assemble into DataFrame
-df = pd.DataFrame({
-    "MerchantID": merchant_ids,
-    "MerchantName": merchant_names,
-    "RepaymentRate": repayment_rate,
-    "DisputeRate": dispute_rate,
-    "DefaultRate": default_rate,
-    "TransactionVolume": transaction_volume,
-    "TenureMonths": tenure_months,
-    "EngagementScore": engagement_score,
-    "ComplianceScore": compliance_score,
-    "ResponsivenessScore": responsiveness_score,
-    "ExclusivityFlag": exclusivity_flag
-})
-
-# Save to CSV
-output_path = "app/data/merchants_loyalty.csv"
+# Save CSV
 df.to_csv(output_path, index=False)
-
-print(f"✅ Generated {len(df)} merchants at {output_path}")
-print(df.head())

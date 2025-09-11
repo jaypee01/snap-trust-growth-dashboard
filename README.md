@@ -1,12 +1,12 @@
 # Snap Trust & Growth Dashboard
 
-**Hackathon 2025 Project** – A dashboard to track **merchant and customer trust scores, loyalty tiers, and leaderboards**. Built with **FastAPI (backend)** and **React + Vite (frontend)** using synthetic CSV data.
+**Hackathon 2025 Project** – A dashboard to track **merchant and customer trust scores, loyalty tiers, historical trends, and leaderboards**. Built with **FastAPI (backend)** and **React + Vite (frontend)** using synthetic CSV data.
 
 ---
 
 ## 🚀 Quick Overview
 
-* **Backend:** FastAPI REST APIs serving trust scores, loyalty tiers, and leaderboard data.
+* **Backend:** FastAPI REST APIs serving trust scores, loyalty tiers, historical trends, benchmarks, AI-generated summaries, and recommendations.
 * **Frontend:** React + Vite dashboard to visualize metrics and leaderboards.
 * **Data Generator:** Python scripts to generate synthetic data for `merchants_loyalty.csv` and `payments.csv`.
 
@@ -22,6 +22,8 @@ snap-trust-growth-dashboard/
 │   │   ├── models.py
 │   │   ├── utils.py
 │   │   ├── endpoints/
+│   │   │   ├── merchants.py
+│   │   │   ├── customers.py
 │   │   │   └── leaderboard.py
 │   │   ├── data/
 │   │   │   ├── merchants_loyalty.csv
@@ -44,9 +46,10 @@ snap-trust-growth-dashboard/
 
 ### Backend
 
-1. **Navigate to backend folder:**
+1. Clone the repository:
 
 ```bash
+git clone https://github.com/jaypee01/snap-trust-growth-dashboard.git
 cd backend
 ```
 
@@ -66,9 +69,11 @@ pip install -r requirements.txt
 
 4. **Set up environment variables:**
 
-Create a .env file in the backend root (next to main.py) with content like:
+Create a `.env` file in the backend root with:
 
+```
 OPENAI_API_KEY=your_api_key_here
+```
 
 5. **Run the server:**
 
@@ -83,19 +88,19 @@ uvicorn app.main:app --reload
 
 ### Frontend
 
-1. **Navigate to frontend folder:**
+1. Navigate to frontend folder:
 
 ```bash
 cd frontend
 ```
 
-2. **Install dependencies:**
+2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. **Run the frontend server:**
+3. Run the frontend server:
 
 ```bash
 npm run dev
@@ -109,63 +114,58 @@ npm run dev
 
 ### Merchants
 
-* `GET /merchants` — List all merchants (summary only) with fields:
+* `GET /merchants` — List all merchants (summary only):
 
-  * `MerchantID` — Unique merchant identifier
-  * `MerchantName` — Name of the merchant
-  * `ExclusivityFlag` — 1 if exclusive partner, 0 otherwise
-  * `TrustScore` — Calculated composite trust score
-  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+  * `MerchantID`, `MerchantName`, `ExclusivityFlag`, `TrustScore`, `LoyaltyTier`, `Summary`
 
-* `GET /merchants/{merchant_id}` — Get full metrics for a specific merchant by ID, including:
+* `GET /merchants/{merchant_id}` — Full metrics:
 
-  * `MerchantID`
-  * `MerchantName`
-  * `RepaymentRate`
-  * `DisputeRate`
-  * `DefaultRate`
-  * `TransactionVolume`
-  * `TenureMonths`
-  * `EngagementScore`
-  * `ComplianceScore`
-  * `ResponsivenessScore`
-  * `ExclusivityFlag`
-  * `TrustScore`
-  * `LoyaltyTier`
+  * Core metrics: `RepaymentRate`, `DisputeRate`, `DefaultRate`, `TransactionVolume`, `TenureMonths`
+  * Engagement metrics: `EngagementScore`, `ComplianceScore`, `ResponsivenessScore`, `ExclusivityFlag`
+  * Derived metrics: `TrustScore`, `LoyaltyTier`
+  * Optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`, `Benchmark`
+
+* `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
+
+* `GET /merchants/{merchant_id}/history` — Historical trends of TrustScore, EngagementScore, ComplianceScore.
+
+* `GET /merchants/{merchant_id}/benchmark` — Compare merchant metrics against peers.
+
+* `GET /merchants/{merchant_id}/recommendations` — AI-generated actionable recommendations.
 
 ### Customers
 
-* `GET /customers` — List all customers (summary only) with fields:
+* `GET /customers` — List all customers (summary only):
 
-  * `CustomerID` — Unique customer identifier
-  * `CustomerName` — Name of the customer
-  * `TrustScore` — Calculated composite trust score
-  * `LoyaltyTier` — Tier assigned based on TrustScore (e.g., Gold, Silver)
+  * `CustomerID`, `CustomerName`, `TrustScore`, `LoyaltyTier`, `Summary`
 
-* `GET /customers/{customer_id}` — Get full metrics for a specific customer by ID, including:
+* `GET /customers/{customer_id}` — Full metrics:
 
-  * `CustomerID`
-  * `CustomerName`
-  * `RepaymentRate`
-  * `DisputeCount`
-  * `DefaultRate`
-  * `TransactionVolume`
-  * `TrustScore`
-  * `LoyaltyTier`
+  * Core metrics: `RepaymentRate`, `DisputeCount`, `DefaultRate`, `TransactionVolume`
+  * Derived metrics: `TrustScore`, `LoyaltyTier`
+  * Optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`
+
+* `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier.
+
+* `GET /customers/{customer_id}/history` — Historical trends of TrustScore, disputes, defaults.
+
+* `GET /customers/{customer_id}/recommendations` — AI-generated actionable recommendations.
 
 ### Leaderboard (sorted by TrustScore)
 
-* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10` — Returns top merchants sorted by `TrustScore` (summary fields only).
-* `GET /leaderboard/customers?sort_order=asc|desc&limit=10` — Returns top customers sorted by `TrustScore` (summary fields only).
+* `GET /leaderboard/merchants?sort_order=asc|desc&limit=10`
+* `GET /leaderboard/customers?sort_order=asc|desc&limit=10`
 
 ---
 
 ## 🎯 Features
 
 * Trust score & loyalty tier calculation for merchants & customers
+* Historical trend tracking
+* AI-powered summaries and recommendations
+* Benchmarks against peers
 * Leaderboards with sorting & filtering
-* Synthetic data generated via `dataGenerator/` scripts
-* Designed for hackathon/demo use
+* Synthetic data generation via `dataGenerator/` scripts
 
 ---
 
@@ -180,8 +180,9 @@ npm run dev
 
 ## ⚠️ Notes
 
-* Data is synthetic for demo purposes.
+* All data is synthetic for demo purposes.
 * Add CORS middleware if connecting frontend on a different port.
 * CSV files can be regenerated using the scripts in `dataGenerator/`.
+* AI summaries/recommendations require `OPENAI_API_KEY` in `.env`.
 
 ---

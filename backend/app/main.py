@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .endpoints import leaderboard
+from .endpoints import customers_router, merchants_router  # import your routers
 
 # Create FastAPI app instance with metadata
 app = FastAPI(
@@ -7,7 +7,7 @@ app = FastAPI(
     description=(
         "Backend API for Hackathon 2025: Snap Trust & Growth Dashboard. "
         "Provides endpoints to calculate trust scores, loyalty tiers, "
-        "and generate leaderboards for merchants and customers. "
+        "and generate metrics for merchants and customers. "
         "Uses AI-based scoring algorithms to assess reliability, engagement, "
         "and overall trustworthiness of both customers and merchants."
     ),
@@ -17,5 +17,8 @@ app = FastAPI(
     }
 )
 
-# Include only the leaderboard router
-app.include_router(leaderboard.router, prefix="/leaderboard", tags=["Leaderboard"])
+# Include customers router
+app.include_router(customers_router.router, prefix="/customers", tags=["Customers"])
+
+# Include merchants router
+app.include_router(merchants_router.router, prefix="/merchants", tags=["Merchants"])

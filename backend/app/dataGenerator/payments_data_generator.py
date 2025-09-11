@@ -3,12 +3,12 @@ payments_data_generator.py
 
 Generates synthetic payments data for customers and merchants using Faker.
 
-- Creates a configurable number of records with:
-  * Customer and Merchant IDs & names
-  * Payment IDs and dates within 2024
-  * Payment amounts (50–500 range)
-  * Payment status (PAID or FAILED)
-  * Dispute and default flags
+Enhancements:
+- Wider variation in payment amounts (20–2000)
+- More realistic failure & dispute distributions
+- Disputes can occur even if PAID (reflects real-life chargebacks)
+- Defaults biased to FAILED payments but small chance on PAID (late settlement cases)
+- Ensures each customer and merchant has at least one transaction
 
 Output:
     app/data/payments.csv
@@ -34,6 +34,7 @@ customers = [(f"C{i+1:03d}", fake.name()) for i in range(num_customers)]
 merchants = [(f"M{i+1:03d}", fake.company()) for i in range(num_merchants)]
 
 rows = []
+
 for i in range(num_records):
     cust_id, cust_name = random.choice(customers)
     merch_id, merch_name = random.choice(merchants)
@@ -43,16 +44,24 @@ for i in range(num_records):
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31)
     )
-    payment_amount = round(random.uniform(50, 500), 2)
+    
+    # Payment amounts vary widely (small to large transactions)
+    payment_amount = round(random.uniform(20, 2000), 2)
 
-    # Assign payment status with 90% PAID and 10% FAILED
-    payment_status = random.choices(["PAID", "FAILED"], weights=[0.9, 0.1])[0]
+    # Assign payment status (85% PAID, 15% FAILED)
+    payment_status = random.choices(["PAID", "FAILED"], weights=[0.85, 0.15])[0]
 
-    # Small probability of dispute (5%)
-    dispute_flag = random.choices([0, 1], weights=[0.95, 0.05])[0]
+    # Dispute probability higher for FAILED but can occur for PAID too
+    if payment_status == "FAILED":
+        dispute_flag = random.choices([0, 1], weights=[0.85, 0.15])[0]
+    else:
+        dispute_flag = random.choices([0, 1], weights=[0.97, 0.03])[0]
 
-    # DefaultFlag = 1 only if FAILED
-    default_flag = 1 if payment_status == "FAILED" else 0
+    # DefaultFlag = mostly on FAILED, but tiny chance even on PAID
+    if payment_status == "FAILED":
+        default_flag = random.choices([0, 1], weights=[0.7, 0.3])[0]
+    else:
+        default_flag = random.choices([0, 1], weights=[0.995, 0.005])[0]
 
     rows.append([
         payment_id, cust_id, cust_name, merch_id, merch_name,
@@ -70,3 +79,4 @@ output_path = "app/data/payments.csv"
 df.to_csv(output_path, index=False)
 
 print(f"✅ Generated {len(df)} payment records at {output_path}")
+print(df.head())
