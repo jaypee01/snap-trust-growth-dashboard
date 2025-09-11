@@ -54,17 +54,52 @@ def prepare_customer_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
     return customers
 
+ALLOWED_SORT_BY = ["TrustScore", "LoyaltyTier"]
+ALLOWED_SORT_ORDER = ["asc", "desc"]
+
 # ------------------------------
 # Customers Endpoints
 # ------------------------------
 @router.get("/", summary="Get Customers with Trust & Loyalty Info")
-def get_customers(limit: int = Query(10), sort_order: str = Query("desc", regex="^(asc|desc)$")) -> List[dict]:
+def get_customers(
+    limit: int = Query(10, ge=1),
+    sort_by: str = Query("TrustScore,LoyaltyTier", description="Columns to sort by, comma separated. Allowed: TrustScore,LoyaltyTier"),
+    sort_order: str = Query("desc,desc", description="Sort order for each column, comma separated. Allowed: asc,desc")
+) -> List[dict]:
+    # Load data
     df = pd.read_csv("app/data/payments.csv")
     customers = prepare_customer_metrics(df)
-    ascending = sort_order == "asc"
-    customers = customers.sort_values(by="TrustScore", ascending=ascending).head(limit)
 
-    results = customers[["CustomerID", "CustomerName", "TrustScore", "LoyaltyTier"]].to_dict(orient="records")
+    # Map LoyaltyTier to numeric for sorting
+    loyalty_mapping = {"Platinum": 4, "Gold": 3, "Silver": 2, "Bronze": 1}
+    customers["LoyaltyScore"] = customers["LoyaltyTier"].map(loyalty_mapping)
+
+    # Split and validate query params
+    sort_by_list = [s.strip() for s in sort_by.split(",")]
+    sort_order_list = [s.strip().lower() for s in sort_order.split(",")]
+
+    if len(sort_by_list) != len(sort_order_list):
+        raise HTTPException(status_code=400, detail="sort_by and sort_order must have same number of elements")
+
+    sort_columns = []
+    ascending_list = []
+    for col, order in zip(sort_by_list, sort_order_list):
+        if col not in ALLOWED_SORT_BY:
+            raise HTTPException(status_code=400, detail=f"Invalid sort_by value: {col}")
+        if order not in ALLOWED_SORT_ORDER:
+            raise HTTPException(status_code=400, detail=f"Invalid sort_order value: {order}")
+
+        if col == "LoyaltyTier":
+            sort_columns.append("LoyaltyScore")
+        else:
+            sort_columns.append(col)
+
+        ascending_list.append(order == "asc")
+
+    if sort_columns:
+        customers = customers.sort_values(sort_columns, ascending=ascending_list)
+
+    results = customers[["CustomerID", "CustomerName", "TrustScore", "LoyaltyTier"]].head(limit).to_dict(orient="records")
     return results
 
 @router.get("/{customer_id}", summary="Get Customer Full Metrics with Recommendations")
