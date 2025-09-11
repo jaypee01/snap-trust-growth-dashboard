@@ -46,7 +46,7 @@ def prepare_merchant_metrics(df: pd.DataFrame) -> pd.DataFrame:
 # ------------------------------
 # Merchant Endpoints
 # ------------------------------
-@router.get("/merchants", summary="Get Merchants with Trust & Loyalty Info")
+@router.get("/", summary="Get Merchants with Trust & Loyalty Info")
 def get_merchants(limit: int = Query(10), sort_order: str = Query("desc")) -> List[dict]:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)
@@ -58,7 +58,7 @@ def get_merchants(limit: int = Query(10), sort_order: str = Query("desc")) -> Li
         r["Summary"] = generate_summary("merchant", r)
     return results
 
-@router.get("/merchants/{merchant_id}", summary="Get Merchant Full Metrics")
+@router.get("/{merchant_id}", summary="Get Merchant Full Metrics")
 def get_merchant_details(merchant_id: str) -> dict:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)
@@ -68,7 +68,7 @@ def get_merchant_details(merchant_id: str) -> dict:
     data = row.iloc[0].to_dict()
     return {field: data[field] for field in MERCHANT_OUTPUT_FIELDS_ORDER}
 
-@router.get("/merchants/{merchant_id}/summary/explain", summary="Explain Merchant Scores/Tiers")
+@router.get("/{merchant_id}/summary/explain", summary="Explain Merchant Scores/Tiers")
 def explain_merchant_summary(merchant_id: str) -> dict:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)
@@ -79,7 +79,7 @@ def explain_merchant_summary(merchant_id: str) -> dict:
     explanation = generate_summary("merchant", data)
     return {"MerchantID": merchant_id, "Explanation": explanation}
 
-@router.get("/merchants/{merchant_id}/history", summary="Merchant Historical Metrics")
+@router.get("/{merchant_id}/history", summary="Merchant Historical Metrics")
 def merchant_history(merchant_id: str) -> dict:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)  # <-- important, adds TrustScore and LoyaltyTier
@@ -96,7 +96,7 @@ def merchant_history(merchant_id: str) -> dict:
     }
     return {"MerchantID": merchant_id, "History": history}
 
-@router.get("/merchants/{merchant_id}/benchmark", summary="Merchant Benchmark Against Peers")
+@router.get("/{merchant_id}/benchmark", summary="Merchant Benchmark Against Peers")
 def merchant_benchmark(merchant_id: str):
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)
@@ -107,7 +107,7 @@ def merchant_benchmark(merchant_id: str):
     benchmarks = df.describe().to_dict()
     return {"MerchantID": merchant_id, "MerchantMetrics": merchant, "Benchmarks": benchmarks}
 
-@router.get("/merchants/{merchant_id}/recommendations", summary="Merchant Recommendations")
+@router.get("/{merchant_id}/recommendations", summary="Merchant Recommendations")
 def merchant_recommendations(merchant_id: str):
     df = pd.read_csv("app/data/merchants_loyalty.csv")
     df = prepare_merchant_metrics(df)

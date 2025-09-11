@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from .endpoints import customers_router, merchants_router  # import your routers
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Create FastAPI app instance with metadata
 app = FastAPI(
@@ -16,6 +18,20 @@ app = FastAPI(
         "names": "Tarun Bhartiya, Harneet Chugga, Neel Khalade, Jyoti Parkash"
     }
 )
+
+
+# Allow all origins (development only)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def root():
+    return {"message": "Backend is running"}
 
 # Include customers router
 app.include_router(customers_router.router, prefix="/customers", tags=["Customers"])
