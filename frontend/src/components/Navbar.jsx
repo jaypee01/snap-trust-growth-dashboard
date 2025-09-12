@@ -10,6 +10,12 @@ import { Link, useLocation, useNavigate } from "react-router";
 const navItems = [
   { id: 1, label: "Merchants", link: "/merchants" },
   { id: 2, label: "Consumers", link: "/consumers" },
+  {
+    id: 3, label: "Dashboard Merchant", link: "/merchants-dashboard"
+  },
+  {
+    id: 4, label: "Dashboard Consumer", link: "/consumer-dashboard"
+  }
 ];
 
 function NavBar() {
