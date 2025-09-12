@@ -2,10 +2,14 @@
 openai>=1.0.0
 pandas>=2.0.0
 
-# Optional but useful for dashboards/APIs
-flask>=3.0.0
+# Web framework and API
 fastapi>=0.110.0
 uvicorn[standard]>=0.30.0
+flask>=3.0.0
+
+# Database
+SQLAlchemy
+pydantic
 
 # For environment variable management
 python-dotenv>=1.0.0
