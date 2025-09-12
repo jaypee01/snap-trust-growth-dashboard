@@ -1,189 +1,214 @@
 # Snap Trust & Growth Dashboard
 
-**Hackathon 2025 Project** – A dashboard to track **merchant and customer trust scores, loyalty tiers, historical trends, and AI-generated insights**. Built with **FastAPI (backend)** and **React + Vite (frontend)** using synthetic CSV data.
+A full-stack dashboard to track merchant and customer trust scores, loyalty tiers, historical trends, and AI-generated insights. Built for Hackathon 2025 with FastAPI (backend) and React + Vite (frontend) using synthetic CSV data and an auto-initialized SQLite DB.
 
 ---
 
-## 🚀 Quick Overview
+## 🚀 What’s Inside
 
-* **Backend:** FastAPI REST APIs serving trust scores, loyalty tiers, historical trends, benchmarks, AI-generated summaries, recommendations, and natural language queries.
-* **Frontend:** React + Vite dashboard to visualize metrics.
-* **Data Generator:** Python scripts to generate synthetic data for `merchants_loyalty.csv` and `payments.csv`.
+- **Backend (FastAPI)**: Trust scoring, loyalty tiers, history, benchmarks, dashboard aggregates, AI chat, and natural-language queries
+- **Frontend (React + Vite + MUI + Nivo)**: Merchants/Consumers listings, detail pages, and dashboards with charts
+- **Data**: `payments.csv` and `merchants_loyalty.csv` bootstrapped into `app/data/app.db`
+- **AI**: OpenAI-backed summaries, recommendations, chart code generation (with safe fallbacks)
 
 ---
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
 ```
-
 snap-trust-growth-dashboard/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── models.py
 │   │   ├── utils.py
+│   │   ├── db.py
 │   │   ├── endpoints/
-│   │   │   ├── merchants.py
-│   │   │   ├── customers.py
-│   │   │   └── ai\_query\_router.py
+│   │   │   ├── merchants_router.py
+│   │   │   ├── customers_router.py
+│   │   │   ├── dashboard.py
+│   │   │   ├── ai_router.py
+│   │   │   └── ai_query_router.py
 │   │   ├── data/
-│   │   │   ├── merchants\_loyalty.csv
+│   │   │   ├── app.db
+│   │   │   ├── merchants_loyalty.csv
 │   │   │   └── payments.csv
 │   │   └── dataGenerator/
-│   │       ├── merchant\_loyalty\_data\_generator.py
-│   │       └── payments\_data\_generator.py
-│   └── requirements.txt
+│   │       ├── merchant_loyalty_data_generator.py
+│   │       └── payments_data_generator.py
+│   ├── requirements.txt
+│   ├── package.json
+│   └── test_ai_integration.py
 ├── frontend/
 │   ├── src/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── components/
+│   │       ├── Navbar.jsx
+│   │       ├── MerchantsListing.jsx
+│   │       ├── ConsumersListing.jsx
+│   │       ├── Merchant-Detail.jsx
+│   │       ├── Consumer-Detail.jsx
+│   │       ├── MerchantsDashboard.jsx
+│   │       ├── ConsumerDashboard.jsx
+│   │       └── charts/
+│   │           ├── TopMerchantsBar.jsx
+│   │           ├── PaymentStatusPie.jsx
+│   │           └── MonthlyCollectionsLine.jsx
 │   └── package.json
-├── .env
-├── .gitignore
+├── start.sh
 └── README.md
-
-````
+```
 
 ---
 
-## 🛠️ Setup Instructions
+## ⚡ Quick Start (one command)
+
+```bash
+bash start.sh
+```
+
+- Verifies ports 8000 and 5173 are free
+- Ensures backend `.env` exists with `OPENAI_API_KEY`
+- Installs backend and frontend deps, then runs both servers
+- Backend: http://localhost:8000  |  Docs: http://localhost:8000/docs
+- Frontend: http://localhost:5173
+
+If you prefer manual setup, see below.
+
+---
+
+## 🛠️ Manual Setup
 
 ### Backend
 
-1. Clone the repository:
-
 ```bash
-git clone https://github.com/jaypee01/snap-trust-growth-dashboard.git
 cd backend
-````
-
-2. **Create virtual environment & activate:**
-
-```bash
 python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
-```
-
-3. **Install dependencies:**
-
-```bash
+source venv/bin/activate          # macOS/Linux
+# venv\Scripts\activate          # Windows
 pip install -r requirements.txt
+
+# Create backend/.env with your key
+# echo "OPENAI_API_KEY=your_api_key_here" > .env
+
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-4. **Set up environment variables:**
-
-Create a `.env` file in the backend root with:
-
-```
-OPENAI_API_KEY=your_api_key_here
-```
-
-5. **Run the server:**
-
-```bash
-uvicorn app.main:app --reload
-```
-
-* API base: `http://127.0.0.1:8000`
-* Interactive docs: `http://127.0.0.1:8000/docs`
-
----
+- Base URL: `http://127.0.0.1:8000`
+- API Docs: `http://127.0.0.1:8000/docs`
+- On startup, the app loads CSVs into `app/data/app.db` if empty and creates helpful indexes.
 
 ### Frontend
 
-1. Navigate to frontend folder:
-
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-
-```bash
 npm install
-```
-
-3. Run the frontend server:
-
-```bash
 npm run dev
 ```
 
-* Dashboard available at the printed URL (usually `http://localhost:5173`)
+- Runs Vite dev server (default `http://localhost:5173`)
 
 ---
 
-## 🛠️ API Endpoints
+## 🔌 Backend Endpoints
 
-### Merchants
+### Root
+- `GET /` — Health message
 
-* `GET /merchants` — List all merchants (summary only)
-* `GET /merchants/{merchant_id}` — Full metrics with optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`, `Benchmark`
-* `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier
-* `GET /merchants/{merchant_id}/history` — Historical trends
-* `GET /merchants/{merchant_id}/benchmark` — Compare metrics against peers
-* `GET /merchants/{merchant_id}/recommendations` — AI-generated actionable recommendations
+### Merchants (`app/endpoints/merchants_router.py`)
+- `GET /merchants` — Paginated, sortable by `TrustScore` and `LoyaltyTier`
+- `GET /merchants/{merchant_id}` — Full metrics + `Summary`, `Recommendations`
+- `GET /merchants/{merchant_id}/summary/explain` — Explanation for TrustScore/Tier
+- `GET /merchants/{merchant_id}/history` — Synthetic trend history for key metrics
+- `GET /merchants/{merchant_id}/benchmark` — Peer benchmarks via `describe()`
+- `GET /merchants/{merchant_id}/recommendations` — AI-backed with fallbacks
 
-### Customers
+### Customers (`app/endpoints/customers_router.py`)
+- `GET /customers` — Paginated, sortable by `TrustScore` and `LoyaltyTier`
+- `GET /customers/{customer_id}` — Full metrics + `Summary`, `Recommendations`
+- `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore/Tier
+- `GET /customers/{customer_id}/history` — Date-wise metrics + derived scores
+- `GET /customers/{customer_id}/recommendations` — AI-backed with fallbacks
 
-* `GET /customers` — List all customers (summary only)
-* `GET /customers/{customer_id}` — Full metrics with optional AI fields: `Summary`, `Explanation`, `History`, `Recommendations`
-* `GET /customers/{customer_id}/summary/explain` — Explanation for TrustScore & LoyaltyTier
-* `GET /customers/{customer_id}/history` — Historical trends
-* `GET /customers/{customer_id}/recommendations` — AI-generated actionable recommendations
+### Dashboards (`app/endpoints/dashboard.py`)
+- `GET /dashboard/merchants` —
+  - `topMerchantsByPayments`: `[ { merchant, amount } ]`
+  - `paymentStatusMix`: `[ { id, value } ]`
+  - `topMerchantTrust`: `[ { merchant, trustScore, loyaltyTier } ]`
+- `GET /dashboard/consumers` —
+  - `monthlyCollections`: Nivo line-series for expected vs received
 
-### AI Query (Natural Language)
+### AI Chat (`app/endpoints/ai_router.py`)
+- `POST /ai/chat` — General AI chat for `consumer` or `merchant` context.
+  - Detects chart requests and can generate Nivo chart component code.
+  - Falls back to informative text if OpenAI is unavailable.
+- `GET /ai/health` — Health check
 
-* `POST /ai-query/` — Single endpoint for **any natural language query** about merchants or customers.
+### Natural Language Query (`app/endpoints/ai_query_router.py`)
+- `POST /ai-query` — Auto-classifies query as `customers` or `merchants`, prepares data preview, and returns structured analysis (JSON-first). Includes safe JSON parsing.
+- `POST /customers/ai-query` — Customer-specific analysis
+- `POST /merchants/ai-query` — Merchant-specific analysis
 
-**Request Body Example:**
+---
 
-```json
-{
-  "query": "Show top 10 customers by TrustScore and their loyalty tiers"
-}
+## 🖥️ Frontend Routes (`src/App.jsx`)
+
+- `/` → redirects to `/merchants`
+- `/merchants` — `MerchantsListing`
+- `/consumers` — `ConsumersListing`
+- `/merchants-dashboard` — `MerchantsDashboard`
+- `/consumer-dashboard` — `ConsumerDashboard`
+- `/merchants/:merchantId` — `Merchant-Detail`
+- `/consumers/:customerId` — `Consumer-Detail`
+
+The UI uses **Material UI** for layout and **Nivo** for charts:
+- `TopMerchantsBar`, `PaymentStatusPie`, `MonthlyCollectionsLine`
+
+---
+
+## 🧠 Trust Score & Loyalty Logic
+
+- Merchant trust score blends repayment, defaults, disputes, engagement, compliance, responsiveness, and small boosts for exclusivity and very high volume.
+- Customer trust score weighs on-time repayment, defaults, and disputes.
+- Loyalty tiers: `Platinum (≥95)`, `Gold (≥90)`, `Silver (≥80)`, else `Bronze`.
+- AI summaries and recommendations are requested via OpenAI with strict JSON/text constraints and robust fallbacks for reliability.
+
+---
+
+## 🔐 Environment
+
+Create `backend/.env`:
 ```
-
-**Features:**
-
-* Automatically detects if query is about **customers** or **merchants**
-
-* Prepares metrics using `prepare_customer_metrics` or `prepare_merchant_metrics`
-
-* Generates **analysis, summaries, recommendations**, or **filtered/sorted data**
-
-* Returns **readable JSON, HTML, or text** depending on the request
-
-* `POST /ai-query/customers` — Customer-specific query endpoint
-
-* `POST /ai-query/merchants` — Merchant-specific query endpoint
+OPENAI_API_KEY=your_api_key_here
+```
+If no key or quota issues occur, endpoints gracefully fall back to deterministic logic and canned insights.
 
 ---
 
-## 🎯 Features
+## 🧪 Testing
 
-* Trust score & loyalty tier calculation
-* Historical trend tracking
-* AI-powered summaries and recommendations
-* Benchmarks against peers
-* Natural language query API (`/ai-query`) for flexible analytics
-* Synthetic data generation via `dataGenerator/` scripts
+- `backend/test_ai_integration.py` contains basic integration tests for AI flows (adjust API key and quotas as needed).
+
+---
+
+## 🧰 Troubleshooting
+
+- Port already in use: stop previous processes or change ports, then re-run
+- No `.env` detected: create `backend/.env` with `OPENAI_API_KEY`
+- Empty charts/data: ensure CSVs exist in `backend/app/data/` or regenerate via data generators, then restart the backend to re-seed SQLite
+- CORS issues: `main.py` enables localhost:5173; adjust origins if your frontend runs elsewhere
 
 ---
 
 ## 👥 Contributors
 
-* Tarun Bhartiya
-* Harneet Chugga
-* Neel Khalade
-* Jyoti Parkash
+- Tarun Bhartiya
+- Neel Khalade
+- Jyoti Parkash
 
 ---
 
-## ⚠️ Notes
+## 📜 License
 
-* All data is synthetic for demo purposes
-* AI summaries/recommendations require `OPENAI_API_KEY` in `.env`
-* CSV files can be regenerated using the scripts in `dataGenerator/`
-* Add CORS middleware if connecting frontend on a different port
-
-```
+For hackathon/demo use. Add a license of your choice for wider distribution.
