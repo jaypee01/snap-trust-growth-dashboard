@@ -169,3 +169,19 @@ def customer_recommendations(customer_id: str):
     data = row.iloc[0].to_dict()
     recommendations = generate_customer_recommendations(data)
     return {"CustomerID": customer_id, "Recommendations": recommendations}
+
+@router.get("/metrics/averages", summary="Get Overall Average Repayment & Default Rates")
+def get_average_metrics() -> dict:
+    """
+    Returns overall average repayment rate and default rate across all customers.
+    """
+    df = pd.read_csv("app/data/payments.csv")
+    customers = prepare_customer_metrics(df)
+
+    avg_repayment_rate = round(customers["RepaymentRate"].mean(), 2)
+    avg_default_rate = round(customers["DefaultRate"].mean(), 2)
+
+    return {
+        "AverageRepaymentRate": avg_repayment_rate,
+        "AverageDefaultRate": avg_default_rate
+    }

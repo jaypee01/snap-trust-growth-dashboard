@@ -96,7 +96,7 @@ def get_merchants(
 
     results = df[["MerchantID", "MerchantName", "ExclusivityFlag", "TrustScore", "LoyaltyTier"]].head(limit).to_dict(orient="records")
     return results
-        
+
 @router.get("/{merchant_id}", summary="Get Merchant Full Metrics with Recommendations")
 def get_merchant_details(merchant_id: str) -> dict:
     df = pd.read_csv("app/data/merchants_loyalty.csv")
@@ -159,3 +159,30 @@ def merchant_recommendations(merchant_id: str):
     merchant = row.iloc[0].to_dict()
     recommendations = generate_merchant_recommendations(merchant)
     return {"MerchantID": merchant_id, "Recommendations": recommendations}
+
+@router.get("/metrics/averages", summary="Get Overall Average Merchant Metrics")
+def get_merchant_averages() -> dict:
+    """
+    Returns overall average metrics across all merchants,
+    including repayment, disputes, defaults, engagement,
+    compliance, responsiveness, and trust.
+    """
+    df = pd.read_csv("app/data/merchants_loyalty.csv")
+    df = prepare_merchant_metrics(df)
+
+    averages = {
+        "AverageRepaymentRate": round(df["RepaymentRate"].mean(), 2),
+        "AverageDisputeRate": round(df["DisputeRate"].mean(), 2),
+        "AverageDefaultRate": round(df["DefaultRate"].mean(), 2),
+        "AverageTransactionVolume": round(df["TransactionVolume"].mean(), 2),
+        "AverageTenureMonths": round(df["TenureMonths"].mean(), 2),
+        "AverageEngagementScore": round(df["EngagementScore"].mean(), 2),
+        "AverageComplianceScore": round(df["ComplianceScore"].mean(), 2),
+        "AverageResponsivenessScore": round(df["ResponsivenessScore"].mean(), 2),
+        "AverageTrustScore": round(df["TrustScore"].mean(), 2),
+    }
+
+    return averages
+
+
+
